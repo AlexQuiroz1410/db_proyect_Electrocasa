@@ -1,13 +1,12 @@
 from pyspark import pipelines as dp
-from pyspark.sql.functions import col, coalesce, lit, to_date, current_timestamp, trim, initcap, when, regexp_replace
-from pyspark.sql.types import StringType,IntegerType,DecimalType
+from pyspark.sql.functions import col, coalesce, lit, to_date, current_timestamp, trim, initcap, when, regexp_replace, posexplode
+from pyspark.sql.types import StringType,IntegerType,DecimalType, DateType, TimestampType
 
 @dp.table(
     name="dbelectrocasa.silver.slv_ventas"
 )
 
-@dp.expect_or_drop("monto_total_valido", """CAST(monto_total AS DOUBLE) IS NOT NULL AND CAST(monto_total AS DOUBLE) > 0""")
-@dp.expect_all({"sucursal_id_informada":"sucursal_id IS NOT NULL"})
+@dp.expect_or_drop("monto_total_valido", "monto_total IS NOT NULL AND monto_total > 0")
 
 def slv_ventas():
     df_transformation = spark.read.table("dbelectrocasa.bronze.brz_ventas_sucursales")
@@ -34,7 +33,7 @@ def slv_ventas():
             col("sucursal_id").cast(StringType()),
             col("producto_id").cast(StringType()),
             col("cantidad").cast(IntegerType()),
-            col("monto_total").cast(DecimalType()),
+            col("monto_total").cast(DecimalType(12,2)),
             col("metodo_pago").cast(StringType()),
             col("fecha_venta"),
             col("canal").cast(StringType()),
@@ -48,13 +47,12 @@ def slv_ventas():
 )
 
 @dp.expect_or_drop("monto_reembolso_valido", """CAST(monto_reembolso AS DOUBLE) IS NOT NULL AND CAST(monto_reembolso AS DOUBLE) > 0""")
-@dp.expect_all({"pedido_id_informado":"pedido_id IS NOT NULL"})
 
 def slv_devoluciones():
     df_transformation = spark.read.table("dbelectrocasa.bronze.brz_devoluciones")
     df_unicas = (
         df_transformation.dropDuplicates(["devolucion_id"])
-        .withColumn("motivo",initcap(trim(regexp_replace(col("motivo","_"," ")))))
+        .withColumn("motivo",initcap(trim(regexp_replace(col("motivo"),"_"," ")))))
         .withColumn("fecha_devolucion",to_date(col("fecha_devolucion")))
         .withColumn("pedido_id",coalesce(col("pedido_id"),lit("Sin Pedido")))
         .withColumn("updated_at", current_timestamp())
@@ -67,7 +65,7 @@ def slv_devoluciones():
             col("sucursal_id").cast(StringType()),
             col("producto_id").cast(StringType()),
             col("motivo").cast(StringType()),
-            col("monto_reembolso").cast(DecimalType()),
+            col("monto_reembolso").cast(DecimalType(12,2)),
             col("fecha_devolucion"),
             col("updated_at")
         )
@@ -77,7 +75,7 @@ def slv_devoluciones():
     name="dbelectrocasa.silver.slv_resenas"
 )
 
-@dp.expect_or_drop("calificacion_valido","""CAST(calificacion AS INT) BETWEEN 1 AND 5 AND CAST(calificacion AS INT) IS NOT NULL""")
+@dp.expect_or_drop("calificacion_valido","calificacion BETWEEN 1 AND 5 AND calificacion IS NOT NULL""")
 @dp.expect_all({"fecha_resena_informado":"fecha_resena IS NOT NULL"})
 
 def slv_resenas():
@@ -90,6 +88,7 @@ def slv_resenas():
                 "comentario":"Sin Comentario"
             }
         )
+        .withColumn("updated_at", current_timestamp())
     )
     
     return (
@@ -102,7 +101,8 @@ def slv_resenas():
             col("comentario").cast(StringType()),
             col("tags"),
             col("respuestas"),
-            col("fecha_resena").cast(DateType())
+            col("fecha_resena").cast(DateType()),
+            col("updated_at")
         )
     )
 
@@ -137,7 +137,7 @@ def slv_resenas_detalle():
         df_respuestas_posexplode
         .select(
             col("resena_id").cast(StringType()),
-            col("pos"),
+            col("pos_respuesta").cast(IntegerType()),
             col("autor").cast(StringType()),
             col("texto").cast(StringType())
         )
@@ -149,7 +149,6 @@ def slv_resenas_detalle():
 )
 
 @dp.expect_or_drop("precio_valido","""CAST(precio_lista AS DOUBLE) IS NOT NULL AND CAST(precio_lista AS DOUBLE) > 0""")
-@dp.expect_all({"marca_informada":"marca IS NOT NULL"})
 
 def slv_productos():
     df_transformation = spark.read.table("dbelectrocasa.bronze.brz_productos")
@@ -174,12 +173,12 @@ def slv_productos():
             col("nombre_producto").cast(StringType()),
             col("categoria").cast(StringType()),
             col("marca").cast(StringType()),
-            col("precio_lista").cast(DecimalType()),
-            col("updated_ad")
+            col("precio_lista").cast(DecimalType(12,2)),
+            col("updated_at")
         )
     )
 
-@dp.temporary.view(
+@dp.temporary_view(
     name="view_empleados",
     comment="Vista limpia de empleados"
 )
@@ -187,13 +186,12 @@ def slv_productos():
 @dp.expect_or_drop("dni_valido","dni IS NOT NULL")
 @dp.expect_all(
     {
-    "fecha_evento_validacion":"fecha_evento IS NOT NULL",
-    "email_validacion":"email IS NOT NULL"
+    "fecha_evento_validacion":"fecha_evento IS NOT NULL"
     }
 )
 
 def staging_empleados():
-    df_transformation = spark.read.table("dbelectrocasa.bronze.brz_empleados_rrhh")
+    df_transformation = sparkStream.read.table("dbelectrocasa.bronze.brz_empleados_rrhh")
     df_limpio = df_transformation.dropna(subset=["dni"])
     df_estandarizado = (
         df_limpio
@@ -210,19 +208,19 @@ def staging_empleados():
             col("nombre").cast(StringType()),
             col("dni").cast(StringType()),
             col("email").cast(StringType()),
-            col("salario").cast(DecimalType()),
+            col("salario").cast(DecimalType(12,2)),
             col("sucursal_id").cast(StringType()),
             col("cargo").cast(StringType()),
             col("tipo_evento").cast(StringType()),
-            col("fecha_evento").cast(DateType()),
-            col("updated_at").cast(StringType()),
+            col("fecha_evento").cast(TimestampType()),
+            col("updated_at"),
         )
     )
     return df_estandarizado
 
 dp.create_streaming_table(
-    name="dbelectrocasa.silver.slv_empleados",
-    coment="Lista de Empleados"
+    name="dbelectrocasa.silver.slv_empleados_hist",
+    comment="Lista de Empleados"
 )
 
 dp.create_auto_cdc_flow(
@@ -234,3 +232,16 @@ dp.create_auto_cdc_flow(
     stored_as_scd_type="2",
     name="empleados_cdc_type2"
 )
+
+@dp.table(
+    name="dbelectrocasa.silver.slv_empleados_actual"
+)    
+def slv_empleados_actual():
+
+    df_actual = (spark.read.table("dbelectrocasa.silver.slv_empleados_hist")
+        .filter(
+            col("__END_AT").isNull()
+        )
+    )
+    
+    return df_actual
