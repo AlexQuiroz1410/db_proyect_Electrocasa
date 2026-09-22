@@ -24,6 +24,7 @@ def slv_ventas():
             .otherwise(col("metodo_pago"))
         )
         .withColumn("fecha_venta",to_date(col("fecha_venta")))
+        .withColumn("sucursal_id",coalesce(col("sucursal_id"),lit("Sin Sucursal")))
         .withColumn("updated_at", current_timestamp())
     )
     return (
@@ -55,6 +56,7 @@ def slv_devoluciones():
         df_transformation.dropDuplicates(["devolucion_id"])
         .withColumn("motivo",initcap(trim(regexp_replace(col("motivo","_"," ")))))
         .withColumn("fecha_devolucion",to_date(col("fecha_devolucion")))
+        .withColumn("pedido_id",coalesce(col("pedido_id"),lit("Sin Pedido")))
         .withColumn("updated_at", current_timestamp())
     )
     return (
@@ -147,6 +149,7 @@ def slv_resenas_detalle():
 )
 
 @dp.expect_or_drop("precio_valido","""CAST(precio_lista AS DOUBLE) IS NOT NULL AND CAST(precio_lista AS DOUBLE) > 0""")
+@dp.expect_all({"marca_informada":"marca IS NOT NULL"})
 
 def slv_productos():
     df_transformation = spark.read.table("dbelectrocasa.bronze.brz_productos")
