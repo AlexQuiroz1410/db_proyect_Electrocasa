@@ -1,5 +1,5 @@
 from pyspark import pipelines as pd
-from pyspark.sql.functions import col, current_timestamp
+from pyspark.sql.functions import col, current_timestamp, lit
 from src.schemas.bronze.ventas_sucursal import schema_ventas_sucursal
 from src.schemas.bronze.resenas import schema_resena
 from src.schemas.bronze.devoluciones import schema_devoluciones
@@ -128,5 +128,32 @@ def bronze_productos():
     
     return df_reader
 
+@pd.materialized_view(
+    name="dbelectrocasa.bronze.brz_tracking",
+    comment="Tracking desde Azure SQL"
+)
+
+def bronze_tracking():
+    df_reader = (
+        spark.read
+        .format("jdbc")
+        .option("url","jdbc_sqlserver://analyticsdmc.database.windows.net:1433")
+        .option("user","sqladmin")
+        .option("password","mdp123$$")
+        .load()
+    )
+    return (
+            df_reader
+            .select(
+                col("tracking_id").cast("string"),
+                col("pedido_id").cast("string"),
+                col("courier").cast("string"),
+                col("estado_entrega").cast("string"),
+                col("sucursal_origen").cast("string"),
+                col("fecha_actualizacion").cast("string")
+            )
+            .withColumn("ingestion_at",current_timestamp())
+            .withColumn("source_system",lit("azure_sql_tracking"))
+    )
 
 
