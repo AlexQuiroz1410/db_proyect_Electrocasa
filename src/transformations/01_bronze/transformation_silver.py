@@ -72,5 +72,43 @@ def slv_devoluciones():
     )
 
 
+@dp.table(
+    name="dbelectrocasa.silver.slv_resenas"
+)
+
+@dp.expect_or_drop("calificacion_valido","CAST(calificacion AS INT) BETWEEN 1 AND 5 AND CAST(calificacion AS INT) IS NOT NULL")
+@dp.expect_all({"fecha_reserva":"fecha_reserva IS NOT NULL"})
+
+def slv_resenas():
+    df_transformation = spark.read.table("dbelectrocasa.bronze.brz_resenas")
+    df_unicas = (df_transformation.dropDuplicates(["resena_id"]))
+
+    df_respuestas_posexplode = df_unicas.select(
+        "resena_id", "producto_id", "cliente_id", "calificacion", "comentario", "tags",
+        posexplode("respuestas").alias("pos", "respuesta"),"fecha_resena"
+    ).select(
+        "resena_id", "producto_id", "cliente_id", "calificacion", "comentario", "tags",
+        "pos",
+        col("respuesta.autor").alias("autor"),
+        col("respuesta.texto").alias("texto"),
+        col("respuesta.timestamp").alias("timestamp_respuesta"),
+        9
+    )
+    
+    return (
+        df_unicas
+        .select(
+            col("devolucion_id").cast(StringType()),
+            col("pedido_id").cast(StringType()),
+            col("sucursal_id").cast(StringType()),
+            col("producto_id").cast(StringType()),
+            col("motivo").cast(StringType()),
+            col("monto_reembolso").cast(DecimalType()),
+            col("fecha_devolucion"),
+            col("updated_at")
+        )
+    )
+
+
 
   
