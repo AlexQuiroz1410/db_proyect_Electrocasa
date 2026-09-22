@@ -37,6 +37,8 @@ def slv_ventas():
             col("metodo_pago").cast(StringType()),
             col("fecha_venta"),
             col("canal").cast(StringType()),
+            col("ingestion_at"),
+            col("source_file"),
             col("updated_at")
         )
     )
@@ -46,13 +48,13 @@ def slv_ventas():
     name="dbelectrocasa.silver.slv_devoluciones"
 )
 
-@dp.expect_or_drop("monto_reembolso_valido", """CAST(monto_reembolso AS DOUBLE) IS NOT NULL AND CAST(monto_reembolso AS DOUBLE) > 0""")
+@dp.expect_or_drop("monto_reembolso_valido", "monto_reembolso IS NOT NULL AND monto_reembolso > 0")
 
 def slv_devoluciones():
     df_transformation = spark.read.table("dbelectrocasa.bronze.brz_devoluciones")
     df_unicas = (
         df_transformation.dropDuplicates(["devolucion_id"])
-        .withColumn("motivo",initcap(trim(regexp_replace(col("motivo"),"_"," ")))))
+        .withColumn("motivo",initcap(trim(regexp_replace(col("motivo"),"_"," "))))
         .withColumn("fecha_devolucion",to_date(col("fecha_devolucion")))
         .withColumn("pedido_id",coalesce(col("pedido_id"),lit("Sin Pedido")))
         .withColumn("updated_at", current_timestamp())
@@ -67,6 +69,8 @@ def slv_devoluciones():
             col("motivo").cast(StringType()),
             col("monto_reembolso").cast(DecimalType(12,2)),
             col("fecha_devolucion"),
+            col("ingestion_at"),
+            col("source_file"),
             col("updated_at")
         )
     )
@@ -75,7 +79,7 @@ def slv_devoluciones():
     name="dbelectrocasa.silver.slv_resenas"
 )
 
-@dp.expect_or_drop("calificacion_valido","calificacion BETWEEN 1 AND 5 AND calificacion IS NOT NULL""")
+@dp.expect_or_drop("calificacion_valido","calificacion BETWEEN 1 AND 5 AND calificacion IS NOT NULL")
 @dp.expect_all({"fecha_resena_informado":"fecha_resena IS NOT NULL"})
 
 def slv_resenas():
@@ -102,6 +106,8 @@ def slv_resenas():
             col("tags"),
             col("respuestas"),
             col("fecha_resena").cast(DateType()),
+            col("ingestion_at"),
+            col("source_file"),
             col("updated_at")
         )
     )
@@ -130,7 +136,10 @@ def slv_resenas_detalle():
         "resena_id",
         col("pos").alias("pos_respuesta"),
         col("respuesta.autor").alias("autor"),
-        col("respuesta.texto").alias("texto")
+        col("respuesta.texto").alias("texto"),
+        col("ingestion_at"),
+        col("source_file"),
+        col("updated_at")
     )
     
     return (
@@ -174,6 +183,8 @@ def slv_productos():
             col("categoria").cast(StringType()),
             col("marca").cast(StringType()),
             col("precio_lista").cast(DecimalType(12,2)),
+            col("ingestion_at"),
+            col("source_file"),
             col("updated_at")
         )
     )
@@ -191,7 +202,7 @@ def slv_productos():
 )
 
 def staging_empleados():
-    df_transformation = sparkStream.read.table("dbelectrocasa.bronze.brz_empleados_rrhh")
+    df_transformation = spark.readStream.table("dbelectrocasa.bronze.brz_empleados_rrhh")
     df_limpio = df_transformation.dropna(subset=["dni"])
     df_estandarizado = (
         df_limpio
@@ -213,7 +224,9 @@ def staging_empleados():
             col("cargo").cast(StringType()),
             col("tipo_evento").cast(StringType()),
             col("fecha_evento").cast(TimestampType()),
-            col("updated_at"),
+            col("ingestion_at"),
+            col("source_file"),
+            col("updated_at")
         )
     )
     return df_estandarizado
@@ -241,6 +254,7 @@ def slv_empleados_actual():
     df_actual = (spark.read.table("dbelectrocasa.silver.slv_empleados_hist")
         .filter(
             col("__END_AT").isNull()
+            & (col("tipo_evento") != "Baja"
         )
     )
     
