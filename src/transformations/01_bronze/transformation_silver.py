@@ -155,13 +155,14 @@ def slv_productos():
     df_transformation = spark.read.table("dbelectrocasa.bronze.brz_productos")
     df_unicas_transformation = (
         df_transformation.dropDuplicates(["producto_id"])
-        .withColumn("categoria",initcap(trim(col("motivo"))))
+        .withColumn("categoria",initcap(trim(col("categoria"))))
         .withColumn(
-            "motivo",
+            "categoria",
             when(col("categoria") == "Climatización","Climatizacion")
             .when(col("categoria") == "Electrónica","Electronica")
             .when(col("categoria") == "Linea_Blanca","Linea Blanca")
             .when(col("categoria") == "Línea Blanca","Linea Blanca")
+            .otherwise(col("categoria"))
         )
         .withColumn("marca",coalesce(col("marca"),lit("Sin Marca")))
         .withColumn("updated_at",current_timestamp())
@@ -178,4 +179,58 @@ def slv_productos():
         )
     )
 
-  
+@dp.temporary.view(
+    name="view_empleados",
+    comment="Vista limpia de empleados"
+)
+
+@dp.expect_or_drop("dni_valido","dni IS NOT NULL")
+@dp.expect_all(
+    {
+    "fecha_evento_validacion":"fecha_evento IS NOT NULL",
+    "email_validacion":"email IS NOT NULL"
+    }
+)
+
+def staging_empleados():
+    df_transformation = spark.read.table("dbelectrocasa.bronze.brz_empleados_rrhh")
+    df_limpio = df_transformation.dropna(subset=["dni"])
+    df_estandarizado = (
+        df_limpio
+        .withColumn("tipo_evento",initcap(trim(col("tipo_evento"))))
+        .withColumn(
+            "tipo_evento",
+            when(col("tipo_evento") == "Cambio_Salario","Cambio Salario")
+            .otherwise(col("tipo_evento"))
+        )
+        .withColumn("email",coalesce(col("email"),lit("Sin Correo")))
+        .withColumn("updated_at", current_timestamp())
+        .select(
+            col("id_empleado").cast(StringType()),
+            col("nombre").cast(StringType()),
+            col("dni").cast(StringType()),
+            col("email").cast(StringType()),
+            col("salario").cast(DecimalType()),
+            col("sucursal_id").cast(StringType()),
+            col("cargo").cast(StringType()),
+            col("tipo_evento").cast(StringType()),
+            col("fecha_evento").cast(DateType()),
+            col("updated_at").cast(StringType()),
+        )
+    )
+    return df_estandarizado
+
+dp.create_streaming_table(
+    name="dbelectrocasa.silver.slv_empleados",
+    coment="Lista de Empleados"
+)
+
+dp.create_auto_cdc_flow(
+    source= "view_empleados",
+    target= "dbelectrocasa.silver.slv_empleados_hist",
+    keys=["id_empleado"],
+    sequence_by="fecha_evento",
+    column_list = ["nombre","dni","email","salario","sucursal_id","cargo","tipo_evento"],
+    stored_as_scd_type="2",
+    name="empleados_cdc_type2"
+)
