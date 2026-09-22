@@ -142,6 +142,37 @@ def slv_resenas_detalle():
     )
 
 
+@dp.table(
+    name="dbelectrocasa.silver.slv_productos"
+)
 
+@dp.expect_or_drop("precio_valido","""CAST(precio_lista AS DOUBLE) IS NOT NULL AND CAST(precio_lista AS DOUBLE) > 0""")
+
+def slv_productos():
+    df_transformation = spark.read.table("dbelectrocasa.bronze.brz_productos")
+    df_unicas_transformation = (
+        df_transformation.dropDuplicates(["producto_id"])
+        .withColumn("categoria",initcap(trim(col("motivo"))))
+        .withColumn(
+            "motivo",
+            when(col("categoria") == "Climatización","Climatizacion")
+            .when(col("categoria") == "Electrónica","Electronica")
+            .when(col("categoria") == "Linea_Blanca","Linea Blanca")
+            .when(col("categoria") == "Línea Blanca","Linea Blanca")
+        )
+        .withColumn("marca",coalesce(col("marca"),lit("Sin Marca")))
+        .withColumn("updated_at",current_timestamp())
+    )
+    return (
+        df_unicas_transformation
+        .select(
+            col("producto_id").cast(StringType()),
+            col("nombre_producto").cast(StringType()),
+            col("categoria").cast(StringType()),
+            col("marca").cast(StringType()),
+            col("precio_lista").cast(DecimalType()),
+            col("updated_ad")
+        )
+    )
 
   
