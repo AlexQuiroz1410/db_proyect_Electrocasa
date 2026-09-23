@@ -259,3 +259,38 @@ def slv_empleados_actual():
     )
 
     return df_actual
+
+
+@dp.table(
+    name="dbelectrocasa.silver.slv_tracking"
+)
+
+@dp.expect_or_drop("estado_entrega_valido","""estado_entrega IN ('En Transito','Pendiente','Entregado','Devuelto')""")
+
+def slv_tracking():
+    df_transformation = spark.read.table("dbelectrocasa.bronze.brz_tracking")
+    df_unicas_transformation = (
+        df_transformation.dropDuplicates(["tracking_id"])
+        .withColumn("courier",initcap(trim(col("courier"))))
+        .withColumn("estado_entrega",initcap(trim(regexp_replace(col("estado_entrega"),"_"," "))))
+        .withColumn(
+            "estado_entrega",
+            when(col("estado_entrega") == "En Camino","En Transito")
+            .otherwise(col("estado_entrega"))
+        )
+        .withColumn("updated_at",current_timestamp())
+    )
+    return (
+        df_unicas_transformation
+        .select(
+            col("tracking_id").cast(StringType()),
+            col("pedido_id").cast(StringType()),
+            col("courier").cast(StringType()),
+            col("estado_entrega").cast(StringType()),
+            col("sucursal_origen").cast(DecimalType(12,2)),
+            col("fecha_actualizacion").cast(TimestampType()),
+            col("ingestion_at"),
+            col("source_system"),
+            col("updated_at")
+        )
+    )
