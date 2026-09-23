@@ -5,8 +5,6 @@ from pyspark.sql.types import StringType,IntegerType,DecimalType, DateType, Time
 catalog = spark.conf.get("bundle.catalog")
 schema_bronze = spark.conf.get("bundle.schema_bronze")
 schema_silver = spark.conf.get("bundle.schema_silver")
-landing_path = spark.conf.get("bundle.landing_path")
-schema_location = spark.conf.get("bundle.schema_location")
 
 @dp.table(
     name=f"{catalog}.{schema_silver}.slv_ventas"

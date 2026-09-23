@@ -15,7 +15,7 @@ include:
 variables:
   catalog:
     description: Catálogo de Unity Catalog donde este target publica bronze/silver/gold
-    default: dbassociate
+    default: dbelectrocasa
   schema_bronze:
     description: Schema de la capa Bronze
     default: bronze
@@ -27,42 +27,28 @@ variables:
     default: gold
   landing_path:
     description: Ruta del Volume donde Auto Loader lee los lotes de clientes
-    default: /Volumes/dbassociate/default/vol_landing/input/
+    default: /Volumes/dbelectrocasa/default/vol_landing
+  landing_path_dev:
+    description: Ruta del Volume_Dev donde Auto Loader lee los lotes de clientes
+    default: /Volumes/dbelectrocasa_dev/default/vol_landing
 
 targets:
   dev:
-    # Mismo workspace que ya se usó en la Sesión 09, pero publica en un catalog
-    # nuevo (dbassociate_dev) en vez de reusar dbassociate: así los tres targets
-    # quedan simétricos (cada uno con su propio catalog) y este laboratorio no
-    # toca las tablas que ya corrían desde la Sesión 09. El catalog no se
-    # autocrea (a diferencia de los schemas bronze/silver/gold, que sí): hace
-    # falta CREATE CATALOG IF NOT EXISTS dbassociate_dev antes del primer
-    # deploy (Paso 4 de sesion10_setup.ipynb).
-    # Se despliega desde el panel Deployments del Git folder (sin CLI): el
-    # target vive en el mismo workspace donde está abierto ese Git folder.
     mode: development
     default: true
     presets:
       source_linked_deployment: false
     workspace:
-      host: <url-del-otro-workspace>
+      host: "https://adb-7405606201736253.13.azuredatabricks.net/"
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
     variables:
-      catalog: dbassociate_dev
-      landing_path: /Volumes/dbassociate_dev/default/vol_landing/input/
+      catalog: dbelectrocasa_dev
+      landing_path: {var.landing_path_dev}
     permissions:
       - user_name: ${workspace.current_user.userName}
         level: CAN_MANAGE
 
   test:
-    # El "otro workspace" del taller de esta sesión: reemplazá el host por el de
-    # un segundo workspace (o el mismo workspace si estás practicando con un solo
-    # ambiente disponible, usando igual un catalog distinto para no pisar dev).
-    # El panel Deployments no puede desplegar a un host distinto del que tenés
-    # abierto, así que este target se despliega desde el Web Terminal del
-    # workspace de test (databricks bundle deploy -t test), no desde el panel.
-    # Mismo requisito que dev: CREATE CATALOG IF NOT EXISTS dbassociate_test
-    # antes del primer deploy (Paso 6).
     mode: production
     presets:
       source_linked_deployment: false
@@ -77,11 +63,6 @@ targets:
         level: CAN_MANAGE
 
   prod:
-    # Tercer ambiente, agregado para completar el modelo dev/test/prod y para que
-    # el ejemplo de CI/CD del Paso 8 (deploy -t prod, gateado por aprobación
-    # manual) apunte a un target real. Fuera del recorrido guiado de este
-    # laboratorio (Pasos 1-9): requiere un tercer workspace propio, y el catalog
-    # tampoco se autocrea (CREATE CATALOG IF NOT EXISTS dbassociate_prod).
     mode: production
     presets:
       source_linked_deployment: false

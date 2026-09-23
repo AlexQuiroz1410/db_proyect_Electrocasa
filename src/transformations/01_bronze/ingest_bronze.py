@@ -26,7 +26,7 @@ def bronze_ventas_sucursales():
         spark.readStream
         .format("cloudFiles")
         .option("cloudFiles.format","csv")
-        .option("cloudFiles.schemaLocation",f"{schema_location}/ventas/")
+        .option("cloudFiles.schemaLocation",f"{schema_location}ventas/")
         .option("header",True)
         .option("delimiter",",")
         .schema(schema_ventas_sucursal())
@@ -52,7 +52,7 @@ def bronze_resenas():
         spark.readStream
         .format("cloudFiles")
         .option("cloudFiles.format","json")
-        .option("cloudFiles.schemaLocation",f"{schema_location}/resenas/")
+        .option("cloudFiles.schemaLocation",f"{schema_location}resenas/")
         .schema(schema_resena())
         .load(f"{landing_path}/resenas/")
         .withColumn("ingestion_at", current_timestamp())
@@ -77,7 +77,7 @@ def bronze_devoluciones():
         spark.readStream
         .format("cloudFiles")
         .option("cloudFiles.format","csv")
-        .option("cloudFiles.schemaLocation",f"{schema_location}/devoluciones/")
+        .option("cloudFiles.schemaLocation",f"{schema_location}devoluciones/")
         .option("header",True)
         .option("delimiter",",")
         .schema(schema_devoluciones())
@@ -104,7 +104,7 @@ def bronze_empleados():
         spark.readStream
         .format("cloudFiles")
         .option("cloudFiles.format","csv")
-        .option("cloudFiles.schemaLocation",f"{schema_location}/empleados/")
+        .option("cloudFiles.schemaLocation",f"{schema_location}empleados/")
         .option("header",True)
         .option("delimiter",",")
         .schema(schema_empleados())
