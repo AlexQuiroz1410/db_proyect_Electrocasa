@@ -1,5 +1,5 @@
 from pyspark import pipelines as dp
-from pyspark.sql.functions import col, coalesce, lit, to_date, current_timestamp, trim, initcap, when, regexp_replace, posexplode
+from pyspark.sql.functions import col, coalesce, lit, to_date, current_timestamp, trim, initcap, when, regexp_replace, posexplode, to_json, struct
 from pyspark.sql.types import StringType,IntegerType,DecimalType, DateType, TimestampType
 
 @dp.table(
@@ -293,4 +293,135 @@ def slv_tracking():
             col("source_system"),
             col("updated_at")
         )
+    )
+
+@dp.table(
+    name="dbelectrocasa.silver.slv_quarantine"
+)
+
+def slv_quarantine():
+
+    q_ventas = (
+        spark.readStream.table(
+            "dbelectrocasa.bronze.brz_ventas_sucursales"
+        )
+        .filter(
+            col("monto_total").cast("double").isNull()
+            |
+            (col("monto_total").cast("double") <= 0)
+        )
+        .select(
+            lit("ventas").alias("source_table"),
+            lit("monto_total invalido").alias("motivo_rechazo"),
+            current_timestamp().alias("fecha_rechazo"),
+            col("ingestion_at"),
+            col("source_file"),
+            to_json(struct("*")).alias("payload")
+        )
+    )
+
+    q_devoluciones = (
+        spark.readStream.table(
+            "dbelectrocasa.bronze.brz_devoluciones"
+        )
+        .filter(
+            col("monto_reembolso").cast("double").isNull()
+            |
+            (col("monto_reembolso").cast("double") <= 0)
+        )
+        .select(
+            lit("devoluciones").alias("source_table"),
+            lit("monto_reembolso invalido").alias("motivo_rechazo"),
+            current_timestamp().alias("fecha_rechazo"),
+            col("ingestion_at"),
+            col("source_file"),
+            to_json(struct("*")).alias("payload")
+        )
+    )
+
+    q_resenas = (
+        spark.readStream.table(
+            "dbelectrocasa.bronze.brz_resenas"
+        )
+        .filter(
+            col("calificacion").cast("int").isNull()
+            |
+            (col("calificacion").cast("int").between(1, 5))
+        )
+        .select(
+            lit("resenas").alias("source_table"),
+            lit("calificacion fuera de rango").alias("motivo_rechazo"),
+            current_timestamp().alias("fecha_rechazo"),
+            col("ingestion_at"),
+            col("source_file"),
+            to_json(struct("*")).alias("payload")
+        )
+    )
+
+    q_empleados = (
+        spark.readStream.table(
+            "dbelectrocasa.bronze.brz_empleados_rrhh"
+        )
+        .filter(
+            col("dni").isNull()
+        )
+        .select(
+            lit("empleados").alias("source_table"),
+            lit("dni nulo").alias("motivo_rechazo"),
+            current_timestamp().alias("fecha_rechazo"),
+            col("ingestion_at"),
+            col("source_file"),
+            to_json(struct("*")).alias("payload")
+        )
+    )
+
+    q_productos = (
+        spark.read.table(
+            "dbelectrocasa.bronze.brz_productos"
+        )
+        .filter(
+            col("precio_lista").cast("double").isNull()
+            |
+            (col("precio_lista").cast("double") <= 0)
+        )
+        .select(
+            lit("productos").alias("source_table"),
+            lit("precio_lista invalido").alias("motivo_rechazo"),
+            current_timestamp().alias("fecha_rechazo"),
+            col("ingestion_at"),
+            col("source_file"),
+            to_json(struct("*")).alias("payload")
+        )
+    )
+
+    q_tracking = (
+        spark.read.table(
+            "dbelectrocasa.bronze.brz_tracking"
+        )
+        .filter(
+            ~col("estado_entrega").isin(
+                "En Camino",
+                "En Transito",
+                "Pendiente",
+                "Entregado",
+                "Devuelto"
+            )
+        )
+        .select(
+            lit("tracking").alias("source_table"),
+            lit("estado_entrega invalido").alias("motivo_rechazo"),
+            current_timestamp().alias("fecha_rechazo"),
+            col("ingestion_at"),
+            lit("Azure SQL Database").alias("source_file"),
+            to_json(struct("*")).alias("payload")
+        )
+    )
+
+    return (
+        q_ventas
+        .unionByName(q_devoluciones)
+        .unionByName(q_resenas)
+        .unionByName(q_empleados)
+        .unionByName(q_productos)
+        .unionByName(q_tracking)
     )
