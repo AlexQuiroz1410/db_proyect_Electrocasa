@@ -6,9 +6,13 @@ from src.schemas.bronze.devoluciones import schema_devoluciones
 from src.schemas.bronze.empleados_rrhh import schema_empleados
 from src.schemas.bronze.productos import schema_productos
 
+catalog = spark.conf.get("bundle.catalog")
+schema_bronze = spark.conf.get("bundle.schema_bronze")
+landing_path = spark.conf.get("bundle.landing_path")
+schema_location = spark.conf.get("bundle.schema_location")
 
 @pd.table(
-    name="dbelectrocasa.bronze.brz_ventas_sucursales",
+    name=f"{catalog}.{schema_bronze}.brz_ventas_sucursales",
     comment="Ventas diarias por 40 sucursales",
     table_properties={  
         "quality": "bronze",
@@ -22,11 +26,11 @@ def bronze_ventas_sucursales():
         spark.readStream
         .format("cloudFiles")
         .option("cloudFiles.format","csv")
-        .option("cloudFiles.schemaLocation","/Volumes/dbelectrocasa/default/vol_landing/schemas/ventas/")
+        .option("cloudFiles.schemaLocation",f"{schema_location}/ventas/")
         .option("header",True)
         .option("delimiter",",")
         .schema(schema_ventas_sucursal())
-        .load("/Volumes/dbelectrocasa/default/vol_landing/ventas/")
+        .load(f"{landing_path}/ventas/")
         .withColumn("ingestion_at", current_timestamp())
         .withColumn("source_file", col("_metadata.file_name"))
     )
@@ -34,7 +38,7 @@ def bronze_ventas_sucursales():
     return df_reader
 
 @pd.table(
-    name="dbelectrocasa.bronze.brz_resenas",
+    name=f"{catalog}.{schema_bronze}.brz_resenas",
     comment="Reseñas diarias de las 40 sucursales",
     table_properties={  
         "quality": "bronze",
@@ -48,9 +52,9 @@ def bronze_resenas():
         spark.readStream
         .format("cloudFiles")
         .option("cloudFiles.format","json")
-        .option("cloudFiles.schemaLocation","/Volumes/dbelectrocasa/default/vol_landing/schemas/resenas/")
+        .option("cloudFiles.schemaLocation",f"{schema_location}/resenas/")
         .schema(schema_resena())
-        .load("/Volumes/dbelectrocasa/default/vol_landing/resenas/")
+        .load(f"{landing_path}/resenas/")
         .withColumn("ingestion_at", current_timestamp())
         .withColumn("source_file", col("_metadata.file_name"))
     )
@@ -59,7 +63,7 @@ def bronze_resenas():
 
 
 @pd.table(
-    name="dbelectrocasa.bronze.brz_devoluciones",
+    name=f"{catalog}.{schema_bronze}.brz_devoluciones",
     comment="Devoluciones diarias por 40 sucursales",
     table_properties={  
         "quality": "bronze",
@@ -73,11 +77,11 @@ def bronze_devoluciones():
         spark.readStream
         .format("cloudFiles")
         .option("cloudFiles.format","csv")
-        .option("cloudFiles.schemaLocation","/Volumes/dbelectrocasa/default/vol_landing/schemas/devoluciones/")
+        .option("cloudFiles.schemaLocation",f"{schema_location}/devoluciones/")
         .option("header",True)
         .option("delimiter",",")
         .schema(schema_devoluciones())
-        .load("/Volumes/dbelectrocasa/default/vol_landing/devoluciones/")
+        .load(f"{landing_path}/devoluciones/")
         .withColumn("ingestion_at", current_timestamp())
         .withColumn("source_file", col("_metadata.file_name"))
     )
@@ -86,7 +90,7 @@ def bronze_devoluciones():
 
 
 @pd.table(
-    name="dbelectrocasa.bronze.brz_empleados_rrhh",
+    name=f"{catalog}.{schema_bronze}.brz_empleados_rrhh",
     comment="Empleados",
     table_properties={  
         "quality": "bronze",
@@ -100,11 +104,11 @@ def bronze_empleados():
         spark.readStream
         .format("cloudFiles")
         .option("cloudFiles.format","csv")
-        .option("cloudFiles.schemaLocation","/Volumes/dbelectrocasa/default/vol_landing/schemas/empleados/")
+        .option("cloudFiles.schemaLocation",f"{schema_location}/empleados/")
         .option("header",True)
         .option("delimiter",",")
         .schema(schema_empleados())
-        .load("/Volumes/dbelectrocasa/default/vol_landing/empleados/")
+        .load(f"{landing_path}/empleados/")
         .withColumn("ingestion_at", current_timestamp())
         .withColumn("source_file", col("_metadata.file_name"))
     )
@@ -112,7 +116,7 @@ def bronze_empleados():
     return df_reader 
 
 @pd.materialized_view(
-    name="dbelectrocasa.bronze.brz_productos",
+    name=f"{catalog}.{schema_bronze}.brz_productos",
     comment="Productos"
 )
 
@@ -121,7 +125,7 @@ def bronze_productos():
         spark.read
         .format("json")
         .schema(schema_productos())
-        .load("/Volumes/dbelectrocasa/default/vol_landing/productos/")
+        .load(f"{landing_path}/productos/")
         .withColumn("ingestion_at", current_timestamp())
         .withColumn("source_file", lit("catalogo_productos"))
     )
@@ -129,7 +133,7 @@ def bronze_productos():
     return df_reader
 
 @pd.materialized_view(
-    name="dbelectrocasa.bronze.brz_tracking",
+    name=f"{catalog}.{schema_bronze}.brz_tracking",
     comment="Tracking desde Azure SQL"
 )
 

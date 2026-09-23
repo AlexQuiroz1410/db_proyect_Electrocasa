@@ -2,14 +2,20 @@ from pyspark import pipelines as dp
 from pyspark.sql.functions import col, coalesce, lit, to_date, current_timestamp, trim, initcap, when, regexp_replace, posexplode, to_json, struct
 from pyspark.sql.types import StringType,IntegerType,DecimalType, DateType, TimestampType
 
+catalog = spark.conf.get("bundle.catalog")
+schema_bronze = spark.conf.get("bundle.schema_bronze")
+schema_silver = spark.conf.get("bundle.schema_silver")
+landing_path = spark.conf.get("bundle.landing_path")
+schema_location = spark.conf.get("bundle.schema_location")
+
 @dp.table(
-    name="dbelectrocasa.silver.slv_ventas"
+    name=f"{catalog}.{schema_silver}.slv_ventas"
 )
 
 @dp.expect_or_drop("monto_total_valido", "monto_total IS NOT NULL AND monto_total > 0")
 
 def slv_ventas():
-    df_transformation = spark.readStream.table("dbelectrocasa.bronze.brz_ventas_sucursales")
+    df_transformation = spark.readStream.table(f"{catalog}.{schema_bronze}.brz_ventas_sucursales")
     df_unicas = (
         df_transformation.dropDuplicates(["venta_id"])
         .withColumn("metodo_pago",initcap(trim(col("metodo_pago"))))
@@ -45,13 +51,13 @@ def slv_ventas():
 
 
 @dp.table(
-    name="dbelectrocasa.silver.slv_devoluciones"
+    name=f"{catalog}.{schema_silver}.slv_devoluciones"
 )
 
 @dp.expect_or_drop("monto_reembolso_valido", "monto_reembolso IS NOT NULL AND monto_reembolso > 0")
 
 def slv_devoluciones():
-    df_transformation = spark.readStream.table("dbelectrocasa.bronze.brz_devoluciones")
+    df_transformation = spark.readStream.table(f"{catalog}.{schema_bronze}.brz_devoluciones")
     df_unicas = (
         df_transformation.dropDuplicates(["devolucion_id"])
         .withColumn("motivo",initcap(trim(regexp_replace(col("motivo"),"_"," "))))
@@ -76,14 +82,14 @@ def slv_devoluciones():
     )
 
 @dp.table(
-    name="dbelectrocasa.silver.slv_resenas"
+    name=f"{catalog}.{schema_silver}.slv_resenas"
 )
 
 @dp.expect_or_drop("calificacion_valida","calificacion BETWEEN 1 AND 5 AND calificacion IS NOT NULL")
 @dp.expect_all({"fecha_resena_informado":"fecha_resena IS NOT NULL"})
 
 def slv_resenas():
-    df_transformation = spark.readStream.table("dbelectrocasa.bronze.brz_resenas")
+    df_transformation = spark.readStream.table(f"{catalog}.{schema_bronze}.brz_resenas")
     df_unicas = (
         df_transformation
         .dropDuplicates(["resena_id"])
@@ -114,11 +120,11 @@ def slv_resenas():
 
 
 @dp.table(
-    name="dbelectrocasa.silver.slv_resenas_detalle"
+    name=f"{catalog}.{schema_silver}.slv_resenas_detalle"
 )
 
 def slv_resenas_detalle():
-    df_transformation = spark.readStream.table("dbelectrocasa.bronze.brz_resenas")
+    df_transformation = spark.readStream.table(f"{catalog}.{schema_bronze}.brz_resenas")
     df_unicas = (
         df_transformation
         .dropDuplicates(["resena_id"])
@@ -157,13 +163,13 @@ def slv_resenas_detalle():
 
 
 @dp.table(
-    name="dbelectrocasa.silver.slv_productos"
+    name=f"{catalog}.{schema_silver}.slv_productos"
 )
 
 @dp.expect_or_drop("precio_valido","""CAST(precio_lista AS DOUBLE) IS NOT NULL AND CAST(precio_lista AS DOUBLE) > 0""")
 
 def slv_productos():
-    df_transformation = spark.read.table("dbelectrocasa.bronze.brz_productos")
+    df_transformation = spark.read.table(f"{catalog}.{schema_bronze}.brz_productos")
     df_unicas_transformation = (
         df_transformation.dropDuplicates(["producto_id"])
         .withColumn("categoria",initcap(trim(col("categoria"))))
@@ -205,7 +211,7 @@ def slv_productos():
 )
 
 def staging_empleados():
-    df_transformation = spark.readStream.table("dbelectrocasa.bronze.brz_empleados_rrhh")
+    df_transformation = spark.readStream.table(f"{catalog}.{schema_bronze}.brz_empleados_rrhh")
     df_limpio = df_transformation.dropna(subset=["dni"])
     df_estandarizado = (
         df_limpio
@@ -230,13 +236,13 @@ def staging_empleados():
     return df_estandarizado
 
 dp.create_streaming_table(
-    name="dbelectrocasa.silver.slv_empleados_hist",
+    name=f"{catalog}.{schema_silver}.slv_empleados_hist",
     comment="Lista de Empleados"
 )
 
 dp.create_auto_cdc_flow(
     source= "view_empleados",
-    target= "dbelectrocasa.silver.slv_empleados_hist",
+    target= f"{catalog}.{schema_silver}.slv_empleados_hist",
     keys=["id_empleado"],
     sequence_by="fecha_evento",
     column_list = [
@@ -247,10 +253,10 @@ dp.create_auto_cdc_flow(
 )
 
 @dp.table(
-    name="dbelectrocasa.silver.slv_empleados_actual"
+    name=f"{catalog}.{schema_silver}.slv_empleados_actual"
 )    
 def slv_empleados_actual():
-    df_data = spark.read.table("dbelectrocasa.silver.slv_empleados_hist")
+    df_data = spark.read.table(f"{catalog}.{schema_silver}.slv_empleados_hist")
     df_actual = (
         df_data.filter(
             col("__END_AT").isNull()
@@ -262,14 +268,14 @@ def slv_empleados_actual():
 
 
 @dp.table(
-    name="dbelectrocasa.silver.slv_tracking"
+    name=f"{catalog}.{schema_silver}.slv_tracking"
 )
 
 @dp.expect_or_drop("estado_entrega_valido","""estado_entrega IN ('En Transito','Pendiente','Entregado','Devuelto')""")
 @dp.expect_all({"fecha_actualizacion_informado":"fecha_actualizacion IS NOT NULL"})
 
 def slv_tracking():
-    df_transformation = spark.read.table("dbelectrocasa.bronze.brz_tracking")
+    df_transformation = spark.read.table(f"{catalog}.{schema_bronze}.brz_tracking")
     df_unicas_transformation = (
         df_transformation.dropDuplicates(["tracking_id"])
         .withColumn("courier",initcap(trim(col("courier"))))
@@ -297,14 +303,14 @@ def slv_tracking():
     )
 
 @dp.table(
-    name="dbelectrocasa.silver.slv_quarantine"
+    name=f"{catalog}.{schema_silver}.slv_quarantine"
 )
 
 def slv_quarantine():
 
     q_ventas = (
         spark.readStream.table(
-            "dbelectrocasa.bronze.brz_ventas_sucursales"
+            f"{catalog}.{schema_bronze}.brz_ventas_sucursales"
         )
         .filter(
             col("monto_total").cast("double").isNull()
@@ -323,7 +329,7 @@ def slv_quarantine():
 
     q_devoluciones = (
         spark.readStream.table(
-            "dbelectrocasa.bronze.brz_devoluciones"
+            f"{catalog}.{schema_bronze}.brz_devoluciones"
         )
         .filter(
             col("monto_reembolso").cast("double").isNull()
@@ -342,7 +348,7 @@ def slv_quarantine():
 
     q_resenas = (
         spark.readStream.table(
-            "dbelectrocasa.bronze.brz_resenas"
+            f"{catalog}.{schema_bronze}.brz_resenas"
         )
         .filter(
             col("calificacion").cast("int").isNull()
@@ -361,7 +367,7 @@ def slv_quarantine():
 
     q_empleados = (
         spark.readStream.table(
-            "dbelectrocasa.bronze.brz_empleados_rrhh"
+            f"{catalog}.{schema_bronze}.brz_empleados_rrhh"
         )
         .filter(
             col("dni").isNull()
@@ -378,7 +384,7 @@ def slv_quarantine():
 
     q_productos = (
         spark.read.table(
-            "dbelectrocasa.bronze.brz_productos"
+            f"{catalog}.{schema_bronze}.brz_productos"
         )
         .filter(
             col("precio_lista").cast("double").isNull()
@@ -397,7 +403,7 @@ def slv_quarantine():
 
     q_tracking = (
         spark.read.table(
-            "dbelectrocasa.bronze.brz_tracking"
+            f"{catalog}.{schema_bronze}.brz_tracking"
         )
         .filter(
             ~col("estado_entrega").isin(

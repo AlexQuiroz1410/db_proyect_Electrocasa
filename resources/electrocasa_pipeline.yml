@@ -1,0 +1,18 @@
+resources:
+  pipelines:
+    pipeline_spd_dbelectrocasa:
+      name: spd_dbelectrocasa
+      catalog: ${var.catalog}
+      schema: ${var.schema_bronze}
+      serverless: true
+      root_path: "../"
+
+      libraries:
+        - glob:
+            include: ../src/transformations/**
+      configuration:
+        bundle.catalog: ${var.catalog}
+        bundle.schema_bronze: $var.schema_bronze
+        bundle.schema_silver: ${var.schema_silve
+        bundle.schema_gold: ${schema_gold}
+        bundle.landing_path: ${var.landing_path}
