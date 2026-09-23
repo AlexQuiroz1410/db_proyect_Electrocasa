@@ -22,10 +22,11 @@ def bronze_ventas_sucursales():
         spark.readStream
         .format("cloudFiles")
         .option("cloudFiles.format","csv")
+        .option("cloudFiles.schemaLocation","/Volumes/dbelectrocasa/default/vol_landing/schemas/ventas/")
         .option("header",True)
         .option("delimiter",",")
         .schema(schema_ventas_sucursal())
-        .load("/Volumes/dbelectrocasa/default/vol_landing/electrocasa-data/ventas_sucursales.csv")
+        .load("/Volumes/dbelectrocasa/default/vol_landing/ventas/")
         .withColumn("ingestion_at", current_timestamp())
         .withColumn("source_file", col("_metadata.file_name"))
     )
@@ -47,10 +48,9 @@ def bronze_resenas():
         spark.readStream
         .format("cloudFiles")
         .option("cloudFiles.format","json")
-        .option("header",True)
-        .option("delimiter",",")
+        .option("cloudFiles.schemaLocation","/Volumes/dbelectrocasa/default/vol_landing/schemas/resenas/")
         .schema(schema_resena())
-        .load("/Volumes/dbelectrocasa/default/vol_landing/electrocasa-data/resenas_clientes.json")
+        .load("/Volumes/dbelectrocasa/default/vol_landing/resenas/")
         .withColumn("ingestion_at", current_timestamp())
         .withColumn("source_file", col("_metadata.file_name"))
     )
@@ -73,10 +73,11 @@ def bronze_devoluciones():
         spark.readStream
         .format("cloudFiles")
         .option("cloudFiles.format","csv")
+        .option("cloudFiles.schemaLocation","/Volumes/dbelectrocasa/default/vol_landing/schemas/devoluciones/")
         .option("header",True)
         .option("delimiter",",")
         .schema(schema_devoluciones())
-        .load("/Volumes/dbelectrocasa/default/vol_landing/electrocasa-data/devoluciones.csv")
+        .load("/Volumes/dbelectrocasa/default/vol_landing/devoluciones/")
         .withColumn("ingestion_at", current_timestamp())
         .withColumn("source_file", col("_metadata.file_name"))
     )
@@ -99,10 +100,11 @@ def bronze_empleados():
         spark.readStream
         .format("cloudFiles")
         .option("cloudFiles.format","csv")
+        .option("cloudFiles.schemaLocation","/Volumes/dbelectrocasa/default/vol_landing/schemas/empleados/")
         .option("header",True)
         .option("delimiter",",")
         .schema(schema_empleados())
-        .load("/Volumes/dbelectrocasa/default/vol_landing/electrocasa-data/empleados_rrhh.csv")
+        .load("/Volumes/dbelectrocasa/default/vol_landing/empleados/")
         .withColumn("ingestion_at", current_timestamp())
         .withColumn("source_file", col("_metadata.file_name"))
     )
@@ -118,12 +120,10 @@ def bronze_productos():
     df_reader = (
         spark.read
         .format("json")
-        .option("header",True)
-        .option("delimiter",",")
         .schema(schema_productos())
-        .load("/Volumes/dbelectrocasa/default/vol_landing/electrocasa-data/catalogo_productos.json")
+        .load("/Volumes/dbelectrocasa/default/vol_landing/productos/")
         .withColumn("ingestion_at", current_timestamp())
-        .withColumn("source_file", col("_metadata.file_name"))
+        .withColumn("source_file", lit("catalogo_productos"))
     )
     
     return df_reader
@@ -137,7 +137,8 @@ def bronze_tracking():
     df_reader = (
         spark.read
         .format("jdbc")
-        .option("url","jdbc_sqlserver://analyticsdmc.database.windows.net:1433")
+        .option("url","jdbc:sqlserver://analyticsdmc.database.windows.net:1433;database=electrocasadb;encrypt=true;trustServerCertificate=false;loginTimeout=30;")
+        .option("dbtable", "dbo.TrackingEnvios")
         .option("user","sqladmin")
         .option("password","mdp123$$")
         .load()
@@ -153,7 +154,7 @@ def bronze_tracking():
                 col("fecha_actualizacion").cast("string")
             )
             .withColumn("ingestion_at",current_timestamp())
-            .withColumn("source_system",lit("azure_sql_tracking"))
+            .withColumn("source_system",lit("Azure SQL Database"))
     )
 
 

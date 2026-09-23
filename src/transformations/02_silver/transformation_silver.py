@@ -9,7 +9,7 @@ from pyspark.sql.types import StringType,IntegerType,DecimalType, DateType, Time
 @dp.expect_or_drop("monto_total_valido", "monto_total IS NOT NULL AND monto_total > 0")
 
 def slv_ventas():
-    df_transformation = spark.read.table("dbelectrocasa.bronze.brz_ventas_sucursales")
+    df_transformation = spark.readStream.table("dbelectrocasa.bronze.brz_ventas_sucursales")
     df_unicas = (
         df_transformation.dropDuplicates(["venta_id"])
         .withColumn("metodo_pago",initcap(trim(col("metodo_pago"))))
@@ -51,7 +51,7 @@ def slv_ventas():
 @dp.expect_or_drop("monto_reembolso_valido", "monto_reembolso IS NOT NULL AND monto_reembolso > 0")
 
 def slv_devoluciones():
-    df_transformation = spark.read.table("dbelectrocasa.bronze.brz_devoluciones")
+    df_transformation = spark.readStream.table("dbelectrocasa.bronze.brz_devoluciones")
     df_unicas = (
         df_transformation.dropDuplicates(["devolucion_id"])
         .withColumn("motivo",initcap(trim(regexp_replace(col("motivo"),"_"," "))))
@@ -79,11 +79,11 @@ def slv_devoluciones():
     name="dbelectrocasa.silver.slv_resenas"
 )
 
-@dp.expect_or_drop("calificacion_valido","calificacion BETWEEN 1 AND 5 AND calificacion IS NOT NULL")
+@dp.expect_or_drop("calificacion_valida","calificacion BETWEEN 1 AND 5 AND calificacion IS NOT NULL")
 @dp.expect_all({"fecha_resena_informado":"fecha_resena IS NOT NULL"})
 
 def slv_resenas():
-    df_transformation = spark.read.table("dbelectrocasa.bronze.brz_resenas")
+    df_transformation = spark.readStream.table("dbelectrocasa.bronze.brz_resenas")
     df_unicas = (
         df_transformation
         .dropDuplicates(["resena_id"])
@@ -118,7 +118,7 @@ def slv_resenas():
 )
 
 def slv_resenas_detalle():
-    df_transformation = spark.read.table("dbelectrocasa.bronze.brz_resenas")
+    df_transformation = spark.readStream.table("dbelectrocasa.bronze.brz_resenas")
     df_unicas = (
         df_transformation
         .dropDuplicates(["resena_id"])
@@ -127,11 +127,11 @@ def slv_resenas_detalle():
                 "comentario":"Sin Comentario"
             }
         )
-    )
+    ).withColumn("updated_at", current_timestamp())
 
     df_respuestas_posexplode = df_unicas.select(
         "resena_id",
-        posexplode("respuestas").alias("pos", "respuesta"),"fecha_resena"
+        posexplode("respuestas").alias("pos", "respuesta"),"ingestion_at","source_file","updated_at"
     ).select(
         "resena_id",
         col("pos").alias("pos_respuesta"),
@@ -148,7 +148,10 @@ def slv_resenas_detalle():
             col("resena_id").cast(StringType()),
             col("pos_respuesta").cast(IntegerType()),
             col("autor").cast(StringType()),
-            col("texto").cast(StringType())
+            col("texto").cast(StringType()),
+            col("ingestion_at"),
+            col("source_file"),
+            col("updated_at")
         )
     )
 
@@ -206,12 +209,7 @@ def staging_empleados():
     df_limpio = df_transformation.dropna(subset=["dni"])
     df_estandarizado = (
         df_limpio
-        .withColumn("tipo_evento",initcap(trim(col("tipo_evento"))))
-        .withColumn(
-            "tipo_evento",
-            when(col("tipo_evento") == "Cambio_Salario","Cambio Salario")
-            .otherwise(col("tipo_evento"))
-        )
+        .withColumn("tipo_evento",initcap(trim(regexp_replace(col("tipo_evento"),"_"," "))))
         .withColumn("email",coalesce(col("email"),lit("Sin Correo")))
         .withColumn("updated_at", current_timestamp())
         .select(
@@ -241,7 +239,9 @@ dp.create_auto_cdc_flow(
     target= "dbelectrocasa.silver.slv_empleados_hist",
     keys=["id_empleado"],
     sequence_by="fecha_evento",
-    column_list = ["nombre","dni","email","salario","sucursal_id","cargo","tipo_evento"],
+    column_list = [
+        "nombre","dni","email","salario","sucursal_id","cargo","tipo_evento","fecha_evento","ingestion_at","source_file","updated_at"
+        ],
     stored_as_scd_type="2",
     name="empleados_cdc_type2"
 )
@@ -250,12 +250,12 @@ dp.create_auto_cdc_flow(
     name="dbelectrocasa.silver.slv_empleados_actual"
 )    
 def slv_empleados_actual():
-
-    df_actual = (spark.read.table("dbelectrocasa.silver.slv_empleados_hist")
-        .filter(
+    df_data = spark.read.table("dbelectrocasa.silver.slv_empleados_hist")
+    df_actual = (
+        df_data.filter(
             col("__END_AT").isNull()
-            & (col("tipo_evento") != "Baja"
+            & (col("tipo_evento") != "Baja")
         )
     )
-    
+
     return df_actual

@@ -4,8 +4,7 @@ def schema_productos():
 
     schema_producto = StructType([
         StructField("autor", StringType(), True),
-        StructField("texto", StringType(), True),
-        StructField("timestamp", TimestampType(), True),
+        StructField("texto", StringType(), True)
     ])
     
     df_reader = StructType([
