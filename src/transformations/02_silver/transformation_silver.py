@@ -266,6 +266,7 @@ def slv_empleados_actual():
 )
 
 @dp.expect_or_drop("estado_entrega_valido","""estado_entrega IN ('En Transito','Pendiente','Entregado','Devuelto')""")
+@dp.expect_all({"fecha_actualizacion_informado":"fecha_actualizacion IS NOT NULL"})
 
 def slv_tracking():
     df_transformation = spark.read.table("dbelectrocasa.bronze.brz_tracking")
