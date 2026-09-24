@@ -1,4 +1,4 @@
-from pyspark.sql.types import StructType, StructField, StringType, ArrayType, TimestampType
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, ArrayType, TimestampType
 
 def schema_resena():
 
@@ -11,7 +11,7 @@ def schema_resena():
         StructField("resena_id",   StringType(), True),
         StructField("producto_id", StringType(), True),
         StructField("cliente_id",  StringType(), True),
-        StructField("calificacion", StringType(), True),
+        StructField("calificacion", IntegerType(), True),
         StructField("comentario",  StringType(), True),
         StructField("tags", ArrayType(StringType()), True),
         StructField("respuestas",  ArrayType(schema_respuestas), True),

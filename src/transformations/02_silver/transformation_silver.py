@@ -244,7 +244,7 @@ dp.create_auto_cdc_flow(
     keys=["id_empleado"],
     sequence_by="fecha_evento",
     column_list = [
-        "nombre","dni","email","salario","sucursal_id","cargo","tipo_evento","fecha_evento","ingestion_at","source_file","updated_at"
+        "id_empleado","nombre","dni","email","salario","sucursal_id","cargo","tipo_evento","fecha_evento","ingestion_at","source_file","updated_at"
         ],
     stored_as_scd_type="2",
     name="empleados_cdc_type2"
@@ -300,14 +300,15 @@ def slv_tracking():
         )
     )
 
-@dp.table(
-    name=f"{catalog}.{schema_silver}.slv_quarantine"
+@dp.materialized_view(
+name=f"{catalog}.{schema_silver}.slv_quarantine",
+comment="Cuarentena consolidada de registros rechazados"
 )
 
 def slv_quarantine():
 
     q_ventas = (
-        spark.readStream.table(
+        spark.read.table(
             f"{catalog}.{schema_bronze}.brz_ventas_sucursales"
         )
         .filter(
@@ -326,7 +327,7 @@ def slv_quarantine():
     )
 
     q_devoluciones = (
-        spark.readStream.table(
+        spark.read.table(
             f"{catalog}.{schema_bronze}.brz_devoluciones"
         )
         .filter(
@@ -345,13 +346,13 @@ def slv_quarantine():
     )
 
     q_resenas = (
-        spark.readStream.table(
+        spark.read.table(
             f"{catalog}.{schema_bronze}.brz_resenas"
         )
         .filter(
             col("calificacion").cast("int").isNull()
             |
-            (col("calificacion").cast("int").between(1, 5))
+            (~col("calificacion").cast("int").between(1, 5))
         )
         .select(
             lit("resenas").alias("source_table"),
@@ -364,7 +365,7 @@ def slv_quarantine():
     )
 
     q_empleados = (
-        spark.readStream.table(
+        spark.read.table(
             f"{catalog}.{schema_bronze}.brz_empleados_rrhh"
         )
         .filter(

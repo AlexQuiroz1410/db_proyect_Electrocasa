@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # Creamos el Catalog
 spark.sql(f"""CREATE CATALOG IF NOT EXISTS dbelectrocasa""")
 

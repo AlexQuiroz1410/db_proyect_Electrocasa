@@ -16,7 +16,7 @@ schema_location = spark.conf.get("bundle.schema_location")
     comment="Ventas diarias por 40 sucursales",
     table_properties={  
         "quality": "bronze",
-        "pipelines.reset.allowed": "false",
+        "pipelines.reset.allowed": "true",
         "delta.appendOnly": "true"
     }
 )
@@ -42,7 +42,7 @@ def bronze_ventas_sucursales():
     comment="Reseñas diarias de las 40 sucursales",
     table_properties={  
         "quality": "bronze",
-        "pipelines.reset.allowed": "false",
+        "pipelines.reset.allowed": "true",
         "delta.appendOnly": "true"
     }
 )
@@ -67,7 +67,7 @@ def bronze_resenas():
     comment="Devoluciones diarias por 40 sucursales",
     table_properties={  
         "quality": "bronze",
-        "pipelines.reset.allowed": "false",
+        "pipelines.reset.allowed": "true",
         "delta.appendOnly": "true"
     }
 )
@@ -94,7 +94,7 @@ def bronze_devoluciones():
     comment="Empleados",
     table_properties={  
         "quality": "bronze",
-        "pipelines.reset.allowed": "false",
+        "pipelines.reset.allowed": "true",
         "delta.appendOnly": "true"
     }
 )

@@ -1,6 +1,3 @@
-# Bundle "project_sdp": el mismo pipeline de la Sesión 09 (Lab 1 Explora),
-# ahora parametrizado por ambiente para poder promoverlo a otro workspace (Sesión 10).
-# See https://docs.databricks.com/dev-tools/bundles/index.html for documentation.
 bundle:
   name: project_sdp
   uuid: eb9d4db5-1701-4c02-8b33-d63759fe1bfc
@@ -8,10 +5,6 @@ bundle:
 include:
   - resources/*.yml
 
-# Variables asignadas por target más abajo. catalog es la única que cambia entre
-# dev/test/prod: los tres schemas y la ruta de landing se mantienen iguales en los
-# tres (Auto Loader siempre lee del mismo Volume de la Sesión 09; lo único que
-# cambia es el catalog donde se publican las tablas).
 variables:
   catalog:
     description: Catálogo de Unity Catalog donde este target publica bronze/silver/gold
