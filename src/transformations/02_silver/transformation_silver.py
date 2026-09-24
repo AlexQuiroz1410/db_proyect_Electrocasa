@@ -253,6 +253,7 @@ dp.create_auto_cdc_flow(
 @dp.table(
     name=f"{catalog}.{schema_silver}.slv_empleados_actual"
 )    
+
 def slv_empleados_actual():
     df_data = spark.read.table(f"{catalog}.{schema_silver}.slv_empleados_hist")
     df_actual = (

@@ -49,7 +49,7 @@ def bronze_ventas_sucursales():
 
 def bronze_resenas():
     df_reader = (
-        spark.readStream
+        spark.read
         .format("cloudFiles")
         .option("cloudFiles.format","json")
         .option("cloudFiles.schemaLocation",f"{schema_location}resenas/")
