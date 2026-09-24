@@ -202,17 +202,12 @@ def slv_productos():
 )
 
 @dp.expect_or_drop("dni_valido","dni IS NOT NULL")
-@dp.expect_all(
-    {
-    "fecha_evento_validacion":"fecha_evento IS NOT NULL"
-    }
-)
+@dp.expect_or_drop("fecha_evento_validacion","fecha_evento IS NOT NULL")
 
 def staging_empleados():
     df_transformation = spark.readStream.table(f"{catalog}.{schema_bronze}.brz_empleados_rrhh")
-    df_limpio = df_transformation.dropna(subset=["dni"])
     df_estandarizado = (
-        df_limpio
+        df_transformation
         .withColumn("tipo_evento",initcap(trim(regexp_replace(col("tipo_evento"),"_"," "))))
         .withColumn("email",coalesce(col("email"),lit("Sin Correo")))
         .withColumn("updated_at", current_timestamp())
@@ -239,15 +234,15 @@ dp.create_streaming_table(
 )
 
 dp.create_auto_cdc_flow(
+    name="empleados_cdc_type2",
     source= "view_empleados",
     target= f"{catalog}.{schema_silver}.slv_empleados_hist",
     keys=["id_empleado"],
     sequence_by="fecha_evento",
     column_list = [
-        "id_empleado","nombre","dni","email","salario","sucursal_id","cargo","tipo_evento","fecha_evento","ingestion_at","source_file","updated_at"
+        "id_empleado","nombre","dni","email","salario","sucursal_id","cargo","tipo_evento","fecha_evento"
         ],
-    stored_as_scd_type="2",
-    name="empleados_cdc_type2"
+    stored_as_scd_type="2"
 )
 
 @dp.table(
