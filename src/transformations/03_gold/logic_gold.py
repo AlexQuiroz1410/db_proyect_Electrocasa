@@ -1,17 +1,5 @@
 from pyspark import pipelines as dp
-from pyspark.sql.functions import (
-col,
-count,
-countDistinct,
-sum,
-avg,
-round,
-year,
-month,
-when,
-coalesce,
-lit
-)
+from pyspark.sql.functions import col,count,countDistinct,sum,avg,round,year,month,when,coalesce,lit
 
 catalog = spark.conf.get("bundle.catalog")
 schema_silver = spark.conf.get("bundle.schema_silver")
@@ -28,9 +16,7 @@ schema_gold = spark.conf.get("bundle.schema_gold")
 )
 def gld_ventas_sucursal_mes():
 
-    df_ventas = spark.read.table(
-        f"{catalog}.{schema_silver}.slv_ventas"
-    )
+    df_ventas = spark.read.table(f"{catalog}.{schema_silver}.slv_ventas")
 
     return (
         df_ventas
@@ -65,17 +51,11 @@ def gld_ventas_sucursal_mes():
 )
 def gld_ranking_productos():
 
-    df_ventas = spark.read.table(
-        f"{catalog}.{schema_silver}.slv_ventas"
-    )
+    df_ventas = spark.read.table(f"{catalog}.{schema_silver}.slv_ventas")
 
-    df_devoluciones = spark.read.table(
-        f"{catalog}.{schema_silver}.slv_devoluciones"
-    )
+    df_devoluciones = spark.read.table(f"{catalog}.{schema_silver}.slv_devoluciones")
 
-    df_productos = spark.read.table(
-        f"{catalog}.{schema_silver}.slv_productos"
-    )
+    df_productos = spark.read.table(f"{catalog}.{schema_silver}.slv_productos")
 
 
     # Ventas agregadas primero por producto
@@ -117,13 +97,11 @@ def gld_ranking_productos():
             col("p.producto_id") == col("v.producto_id"),
             "left"
         )
-
         .join(
             devoluciones_producto.alias("d"),
             col("p.producto_id") == col("d.producto_id"),
             "left"
         )
-
         .select(
             col("p.producto_id"),
             col("p.nombre_producto"),
@@ -168,9 +146,7 @@ def gld_ranking_productos():
 )
 def gld_dotacion_sucursal():
 
-    df_empleados = spark.read.table(
-        f"{catalog}.{schema_silver}.slv_empleados_actual"
-    )
+    df_empleados = spark.read.table(f"{catalog}.{schema_silver}.slv_empleados_actual")
 
     return (
         df_empleados
@@ -192,13 +168,9 @@ def gld_dotacion_sucursal():
 )
 def gld_resenas_categoria():
 
-    df_resenas = spark.read.table(
-        f"{catalog}.{schema_silver}.slv_resenas"
-    )
+    df_resenas = spark.read.table(f"{catalog}.{schema_silver}.slv_resenas")
 
-    df_productos = spark.read.table(
-        f"{catalog}.{schema_silver}.slv_productos"
-    )
+    df_productos = spark.read.table(f"{catalog}.{schema_silver}.slv_productos")
 
 
     df_base = (

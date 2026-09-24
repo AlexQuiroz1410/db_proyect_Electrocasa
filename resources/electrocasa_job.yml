@@ -3,13 +3,13 @@ resources:
     electrocasa_job:
       name: electrocasa_job
       schedule:
-        quartz_cron_expression: 39 0 2 * * ?
+        quartz_cron_expression: "0 0 2 * * ?"
         timezone_id: America/Lima
         pause_status: UNPAUSED
       tasks:
         - task_key: ejecutar_pipeline
           pipeline_task:
-            pipeline_id: 4041e5bc-ef2f-4ad7-9e3c-0ace20da503f
+            pipeline_id: ${resources.pipelines.pipeline_spd_dbelectrocasa.id}
           max_retries: 1
           min_retry_interval_millis: 300000
           health:
@@ -25,7 +25,7 @@ resources:
             - task_key: ejecutar_pipeline
           sql_task:
             file:
-              path: ../src/monitoring/monitor_pipeline.py
+              path: ../src/monitoring/validacion_gold.sql
               source: WORKSPACE
             warehouse_id: 6b156408ff08be7c
           email_notifications:
@@ -35,7 +35,7 @@ resources:
           depends_on:
             - task_key: validar_gold
           notebook_task:
-            notebook_path: ../src/monitoring/validacion_gold.sql
+            notebook_path: ../src/monitoring/monitor_pipeline.py
             source: WORKSPACE
           email_notifications:
             on_failure:
