@@ -366,6 +366,8 @@ def slv_quarantine():
         )
         .filter(
             col("dni").isNull()
+            |
+            col("fecha_evento").cast("timestamp").isNull()
         )
         .select(
             lit("empleados").alias("source_table"),
