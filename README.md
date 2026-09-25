@@ -236,7 +236,7 @@ Este proyecto fue retador para mi porque actualmente me dedico principalmente al
 
 Al inicio tuve que detenerme a entender la arquitectura antes de seguir escribiendo codigo. Necesitaba comprender como se relacionaban `databricks.yml`, los resources, los targets, el Lakeflow Declarative Pipeline y el Job. Con el proyecto termine entendiendo mejor que los resources describen lo que se despliega, el pipeline concentra el procesamiento y el Job actua como orquestador de esa ejecucion y de sus controles posteriores.
 
-La ingesta fue probablemente la parte mas nueva para mi. Tuve que decidir cuando tenia sentido trabajar incrementalmente y cuando una lectura batch era suficiente para el alcance del ejercicio. Esto tambien me hizo pensar mas alla del codigo y considerar la frecuencia real que necesitaria cada fuente.
+La ingesta fue probablemente la parte mas nueva para mi. Tuve que decidir cuando tenia sentido trabajar incrementalmente y cuando una lectura batch era suficiente para el alcance del ejercicio, conversando solo en spark declarative pipeline, pues me propuse realizarlo todo en mismo sdp. Esto tambien me hizo pensar mas alla del codigo y considerar la frecuencia real que necesitaria cada fuente.
 
 Por ejemplo, hoy el flujo esta centralizado en el pipeline y puede ejecutarse de manera programada. Sin embargo, desde una perspectiva de negocio no necesariamente quisiera esperar hasta el dia siguiente para revisar las ventas. Podria tener sentido procesarlas varias veces durante el dia para observar como viene evolucionando la operacion, mientras que un catalogo de productos podria requerir una frecuencia mucho menor.
 
