@@ -9,7 +9,7 @@ from src.schemas.bronze.productos import schema_productos
 catalog = spark.conf.get("bundle.catalog")
 schema_bronze = spark.conf.get("bundle.schema_bronze")
 landing_path = spark.conf.get("bundle.landing_path")
-schema_location = spark.conf.get("bundle.schema_location")
+schema_location = spark.conf.get("bundle.landing_location")
 
 @pd.table(
     name=f"{catalog}.{schema_bronze}.brz_ventas_sucursales",

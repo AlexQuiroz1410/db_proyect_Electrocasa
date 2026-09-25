@@ -21,9 +21,15 @@ variables:
   landing_path:
     description: Ruta del Volume donde Auto Loader lee los lotes de clientes
     default: /Volumes/dbelectrocasa/default/vol_landing
+  landing_location:
+    description: Ruta del schema de los autoloader
+    default: /Volumes/dbelectrocasa/default/vol_landing/schemas/
   landing_path_dev:
     description: Ruta del Volume_Dev donde Auto Loader lee los lotes de clientes
     default: /Volumes/dbelectrocasa_dev/default/vol_landing
+  landing_location_dev:
+    description: Ruta del schema de los autoloader
+    default: /Volumes/dbelectrocasa_dev/default/vol_landing/schemas/
 
 targets:
   dev:
@@ -37,6 +43,7 @@ targets:
     variables:
       catalog: dbelectrocasa_dev
       landing_path: ${var.landing_path_dev}
+      landing_location: ${var.landing_location_dev}
     permissions:
       - user_name: ${workspace.current_user.userName}
         level: CAN_MANAGE

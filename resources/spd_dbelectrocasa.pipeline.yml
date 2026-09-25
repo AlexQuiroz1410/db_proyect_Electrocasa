@@ -13,6 +13,7 @@ resources:
       configuration:
         bundle.catalog: ${var.catalog}
         bundle.schema_bronze: ${var.schema_bronze}
-        bundle.schema_silver: ${var.schema_silve}
+        bundle.schema_silver: ${var.schema_silver}
         bundle.schema_gold: ${var.schema_gold}
         bundle.landing_path: ${var.landing_path}
+        bundle.landing_location: ${var.landing_location}
