@@ -44,14 +44,6 @@ Una de las partes mas importantes del proyecto fue entender que las seis fuentes
 
 En las cuatro fuentes basadas en archivos incrementales se definio `schemaLocation`, schemas explicitos y metadata de ingesta. En productos y tracking se eligio una logica batch porque, para el alcance del proyecto, se priorizo disponer de una fotografia consistente de esas fuentes antes que implementar captura incremental desde esos origenes.
 
-### Evidencia 2 - Ingesta Bronze
-
-> **COLOCAR IMAGEN AQUI:** captura de la ejecucion donde se observen las seis tablas `brz_*`.
-
-**Pie sugerido:** *Fuentes Bronze implementadas dentro del Lakeflow Declarative Pipeline.*
-
----
-
 ## 3. Arquitectura Medallion
 
 ### Bronze
@@ -78,9 +70,9 @@ Entre las transformaciones implementadas se encuentran:
 
 Gold queda orientado a las preguntas de negocio y al consumo analitico, separando las agregaciones de negocio de las tareas de limpieza realizadas en Silver.
 
-### Evidencia 3 - Capas Medallion
+### Evidencia 2 - Capas Medallion
 
-> **COLOCAR IMAGEN AQUI:** captura del DAG o listado de tablas donde se distingan Bronze, Silver y Gold.
+<img width="1217" height="721" alt="DAG" src="https://github.com/user-attachments/assets/aea50661-6fa3-4395-a94b-753215e416ea" />
 
 ---
 
@@ -102,13 +94,14 @@ Las reglas no se trataron todas de la misma manera. La politica se decidio segun
 
 Para no perder trazabilidad de los registros descartados se construyo `slv_quarantine` como Materialized View. Esta consolida los rechazos de ventas, devoluciones, resenas, empleados, productos y tracking, guardando fuente, motivo, fecha de rechazo y payload.
 
-### Evidencia 4 - Expectations
+### Evidencia 3 - Expectations
 
-> **COLOCAR IMAGEN AQUI:** captura del Pipeline mostrando Expectations `met/unmet` de las tablas Silver.
+<img width="1208" height="336" alt="slv_expect" src="https://github.com/user-attachments/assets/87553440-6d12-4886-8309-f8658d9b60c0" />
 
-### Evidencia 5 - Quarantine
+---
+### Evidencia 4 - Quarantine
 
-> **COLOCAR IMAGEN AQUI:** resultado de una consulta a `slv_quarantine`, preferiblemente mostrando `source_table`, `motivo_rechazo` y `fecha_rechazo`.
+<img width="1300" height="736" alt="query_quarantine" src="https://github.com/user-attachments/assets/5d91f24d-526d-42e1-84d3-c5096c8be0ad" />
 
 ---
 
@@ -122,7 +115,7 @@ Finalmente, `slv_empleados_actual` toma los registros cuyo `__END_AT` es nulo y 
 
 ### Evidencia 6 - SCD Type 2
 
-> **COLOCAR IMAGEN AQUI:** consulta de `slv_empleados_hist` donde se vean `__START_AT`, `__END_AT` y diferentes versiones de un empleado.
+<img width="1421" height="814" alt="query_emp_hist" src="https://github.com/user-attachments/assets/6d260b91-292f-4413-9701-371ba8cb3d12" />
 
 ---
 
@@ -153,15 +146,15 @@ El Job funciona como orquestador. Primero ejecuta el pipeline, luego valida Gold
 
 ### Evidencia 7 - Bundle desplegado DEV
 
-> **COLOCAR IMAGEN AQUI:** `Bundle resources` o `Deployment output` del target DEV mostrando Pipeline y Job.
+<img width="1890" height="911" alt="bundle deploy" src="https://github.com/user-attachments/assets/8277bbcf-d270-4b30-9fe5-42762cf36bd9" />
 
 ### Evidencia 8 - Segundo target
 
-> **COLOCAR IMAGEN AQUI:** deployment exitoso y recursos del segundo target utilizado para cumplir el requisito de despliegue en al menos dos ambientes.
+<img width="1402" height="325" alt="bundle_target_dev" src="https://github.com/user-attachments/assets/c3e28f50-230f-4563-9894-387ad568f8ce" />
 
 ### Evidencia 9 - Job
 
-> **COLOCAR IMAGEN AQUI:** Run exitoso de `electrocasa_job` mostrando las tareas `ejecutar_pipeline`, `validar_gold` y `monitorear_calidad`.
+<img width="1729" height="871" alt="job_completo" src="https://github.com/user-attachments/assets/bc8b60e7-73d2-40eb-aed1-afb922ec87f8" />
 
 ---
 
@@ -186,11 +179,11 @@ Para el Job se utiliza el historial de Runs y, cuando las system tables estan di
 
 ### Evidencia 10 - Event Log
 
-> **COLOCAR IMAGEN AQUI:** resultado de la consulta al Event Log correspondiente a una ejecucion real.
+<img width="1320" height="678" alt="query_event_log" src="https://github.com/user-attachments/assets/24060d74-b946-4eb5-8499-51c968839da7" />
 
 ### Evidencia 11 - Historial del Job
 
-> **COLOCAR IMAGEN AQUI:** historial de ejecuciones de `electrocasa_job`.
+<img width="1729" height="871" alt="job_completo" src="https://github.com/user-attachments/assets/0fafcaee-3781-41bd-a1fa-92bea8b57481" />
 
 ---
 
@@ -204,7 +197,7 @@ Adicionalmente se utilizan Governed Tags para clasificar columnas sensibles de e
 
 ### Evidencia 12 - Gobierno
 
-> **COLOCAR IMAGEN AQUI:** consulta a `system.information_schema.column_tags` mostrando las columnas clasificadas.
+<img width="585" height="419" alt="column_tag" src="https://github.com/user-attachments/assets/5a5221a4-f508-4881-936a-0a8237f459ea" />
 
 ---
 
