@@ -24,7 +24,7 @@ Bundle -> targets
 
 ### Evidencia 1 - Pipeline completo
 
-> ![alt text](<Captura de pantalla 2026-09-24 232648.png>)
+docs/images/spd_completo.png
 
 ---
 
