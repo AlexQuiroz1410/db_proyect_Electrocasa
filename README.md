@@ -113,7 +113,7 @@ Primero se construye `view_empleados`, donde se estandarizan los eventos y se va
 
 Finalmente, `slv_empleados_actual` toma los registros cuyo `__END_AT` es nulo y excluye los eventos de baja. De esta forma se dispone de historia y fotografia actual sin mantener dos logicas independientes.
 
-### Evidencia 6 - SCD Type 2
+### Evidencia 5 - SCD Type 2
 
 <img width="1421" height="814" alt="query_emp_hist" src="https://github.com/user-attachments/assets/6d260b91-292f-4413-9701-371ba8cb3d12" />
 
@@ -144,15 +144,15 @@ resources/*.yml
 
 El Job funciona como orquestador. Primero ejecuta el pipeline, luego valida Gold y finalmente ejecuta el monitoreo definido para la solucion.
 
-### Evidencia 7 - Bundle desplegado DEV
+### Evidencia 6 - Bundle desplegado DEV
 
 <img width="1890" height="911" alt="bundle deploy" src="https://github.com/user-attachments/assets/8277bbcf-d270-4b30-9fe5-42762cf36bd9" />
 
-### Evidencia 8 - Segundo target
+### Evidencia 7 - Segundo target
 
 <img width="1402" height="325" alt="bundle_target_dev" src="https://github.com/user-attachments/assets/c3e28f50-230f-4563-9894-387ad568f8ce" />
 
-### Evidencia 9 - Job
+### Evidencia 8 - Job
 
 <img width="1729" height="871" alt="job_completo" src="https://github.com/user-attachments/assets/bc8b60e7-73d2-40eb-aed1-afb922ec87f8" />
 
@@ -177,11 +177,11 @@ LIMIT 100;
 
 Para el Job se utiliza el historial de Runs y, cuando las system tables estan disponibles, `system.lakeflow.job_run_timeline` y `system.lakeflow.job_task_run_timeline`.
 
-### Evidencia 10 - Event Log
+### Evidencia 9 - Event Log
 
 <img width="1320" height="678" alt="query_event_log" src="https://github.com/user-attachments/assets/24060d74-b946-4eb5-8499-51c968839da7" />
 
-### Evidencia 11 - Historial del Job
+### Evidencia 10 - Historial del Job
 
 <img width="1729" height="871" alt="job_completo" src="https://github.com/user-attachments/assets/0fafcaee-3781-41bd-a1fa-92bea8b57481" />
 
@@ -195,7 +195,7 @@ Adicionalmente se utilizan Governed Tags para clasificar columnas sensibles de e
 
 > **Importante:** cada persona que despliegue el repositorio debe configurar su propio Secret Scope / Key Vault con las keys esperadas por el codigo.
 
-### Evidencia 12 - Gobierno
+### Evidencia 11 - Gobierno
 
 <img width="585" height="419" alt="column_tag" src="https://github.com/user-attachments/assets/5a5221a4-f508-4881-936a-0a8237f459ea" />
 
