@@ -25,7 +25,6 @@ Bundle -> targets
 ### Evidencia 1 - Pipeline completo
 
 docs/images/spd_completo.png
-
 ---
 
 ## 2. Decisiones de ingesta
