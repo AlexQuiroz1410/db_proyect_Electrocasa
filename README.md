@@ -24,7 +24,7 @@ Bundle -> targets
 
 ### Evidencia 1 - Pipeline completo
 
-> docs/images/spd_completo.png
+./docs/images/spd_completo.png
 
 *Ejecución completa del Lakeflow Declarative Pipeline de Electrocasa.*
 
