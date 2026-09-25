@@ -1,13 +1,13 @@
-SCOPE = "electrocasa-secrets"
+SCOPE_NAME = "electrocasa-secrets"
 
-def get_sql_credentials():
+def get_sql_credentials(dbutils):
     return {
-        "user": dbutils.secrets.get(
-            scope=SCOPE,
-            key="sql-user"
-        ),
-        "password": dbutils.secrets.get(
-            scope=SCOPE,
-            key="sql-password"
-        )
-    }
+    "user": dbutils.secrets.get(
+        scope=SCOPE_NAME,
+        key="sql-user"
+    ),
+    "password": dbutils.secrets.get(
+        scope=SCOPE_NAME,
+        key="sql-password"
+    )
+}

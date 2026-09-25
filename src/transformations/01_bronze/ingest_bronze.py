@@ -5,6 +5,7 @@ from src.schemas.bronze.resenas import schema_resena
 from src.schemas.bronze.devoluciones import schema_devoluciones
 from src.schemas.bronze.empleados_rrhh import schema_empleados
 from src.schemas.bronze.productos import schema_productos
+from src.utils.secrets import get_sql_credentials
 
 catalog = spark.conf.get("bundle.catalog")
 schema_bronze = spark.conf.get("bundle.schema_bronze")
@@ -139,13 +140,16 @@ def bronze_productos():
 )
 
 def bronze_tracking():
+
+    credentials = get_sql_credentials(dbutils)
+
     df_reader = (
         spark.read
         .format("jdbc")
         .option("url","jdbc:sqlserver://analyticsdmc.database.windows.net:1433;database=electrocasadb;encrypt=true;trustServerCertificate=false;loginTimeout=30;")
         .option("dbtable", "dbo.TrackingEnvios")
-        .option("user","sqladmin")
-        .option("password","mdp123$$")
+        .option("user", credentials["user"])
+        .option("password", credentials["password"])
         .load()
     )
     return (
